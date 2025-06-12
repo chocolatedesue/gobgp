@@ -1,0 +1,61 @@
+[global.config]
+  as = 65001
+  router-id = "1.1.1.1"
+
+# Merge the two 'global.apply-policy.config' sections into one
+[global.apply-policy.config]
+  default-import-policy = "accept-route"
+  default-export-policy = "accept-route"
+  export-policy-list = ["export-r1-prefixes"]
+
+# BGP邻居配置
+[[neighbors]]
+  [neighbors.config]
+    neighbor-address = "172.20.2.101"
+    peer-as = 65002
+  # 传输层配置
+  [neighbors.transport.config]
+    local-address = "172.20.2.100"
+    # 关键配置：启用被动模式
+    # 这会使路由器只监听来自邻居的连接请求，而不会主动发起连接
+    # passive-mode = true
+  [neighbors.timers.config]
+    connect-retry = 5 #unit of measurement is seconds
+    hold-time = 9 #unit of measurement is seconds
+    keepalive-interval = 1 #unit of measurement is seconds
+
+[[neighbors]]
+  [neighbors.config]
+    neighbor-address = "172.20.1.102"
+    peer-as = 65003
+  # 传输层配置
+  [neighbors.transport.config]
+    local-address = "172.20.1.100"
+    # 关键配置：启用被动模式
+    # 这会使路由器只监听来自邻居的连接请求，而不会主动发起连接
+    # passive-mode = true
+  [neighbors.timers.config]
+    connect-retry = 5 #unit of measurement is seconds
+    hold-time = 9 #unit of measurement is seconds
+    keepalive-interval = 1 #unit of measurement is seconds
+
+# 静态路由宣告
+[[defined-sets.prefix-sets]]
+  prefix-set-name = "r1-prefixes"
+  [[defined-sets.prefix-sets.prefix-list]]
+    # Corrected IP prefix
+    ip-prefix = "192.168.1.0/24"
+
+[[policy-definitions]]
+  name = "export-r1-prefixes"
+  [[policy-definitions.statements]]
+    name = "statement1"
+    [policy-definitions.statements.conditions.match-prefix-set]
+      prefix-set = "r1-prefixes"
+    [policy-definitions.statements.actions]
+      route-disposition = "accept-route"
+
+# Zebra集成配置(可选)
+[zebra.config]
+  enabled = false
+  url = "unix:/var/run/quagga/zserv.api"

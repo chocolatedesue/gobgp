@@ -1,0 +1,81 @@
+# 移除 version 字段（Docker Compose v2 不再需要）
+
+services:
+  r1:
+    build:
+      context: ..  # 指向根项目目录
+      dockerfile: exp/${DOCKERFILE:-dockerfile}  # Dockerfile 在 exp 目录中
+      args:
+        GOBGP_VERSION: ${GOBGP_VERSION:-3.20.0}
+    container_name: bgp-r1
+    hostname: r1
+    volumes:
+      - ./r1/gobgpd1.toml:/etc/gobgpd.toml:ro
+    networks:
+      net1:
+        ipv4_address: 172.20.1.100
+      net2:
+        ipv4_address: 172.20.2.100
+    cap_add:
+      - NET_ADMIN
+    command: gobgpd -f /etc/gobgpd.toml
+    
+  r2:
+    build:
+      context: ..  # 指向根项目目录
+      dockerfile: exp/${DOCKERFILE:-dockerfile}
+      args:
+        GOBGP_VERSION: ${GOBGP_VERSION:-3.20.0}
+    container_name: bgp-r2
+    hostname: r2
+    volumes:
+      - ./r2/gobgpd2.toml:/etc/gobgpd.toml:ro
+    networks:
+      net2:
+        ipv4_address: 172.20.2.101
+      net3:
+        ipv4_address: 172.20.3.101
+    cap_add:
+      - NET_ADMIN
+    command: gobgpd -f /etc/gobgpd.toml
+    depends_on:
+      - r1
+      
+  r3:
+    build:
+      context: ..  # 指向根项目目录
+      dockerfile: exp/${DOCKERFILE:-dockerfile}
+      args:
+        GOBGP_VERSION: ${GOBGP_VERSION:-3.20.0}
+    container_name: bgp-r3
+    hostname: r3
+    volumes:
+      - ./r3/gobgpd3.toml:/etc/gobgpd.toml:ro
+    networks:
+      net3:
+        ipv4_address: 172.20.3.102
+      net1:
+        ipv4_address: 172.20.1.102
+    cap_add:
+      - NET_ADMIN
+    command: gobgpd -f /etc/gobgpd.toml
+    depends_on:
+      - r1
+      - r2
+
+networks:
+  net1:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.1.0/24
+  net2:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.2.0/24
+  net3:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.3.0/24
